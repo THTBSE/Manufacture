@@ -19,3 +19,20 @@ int vfclToolkit::PointOnMesh(const TriMesh* mesh,const point& p)
 	kd = NULL;
 	return k;
 }
+
+void vfclToolkit::projectToXZPlane(vector<point>& ret, const TriMesh *mesh)
+{
+	if (!mesh)
+		return;
+
+	ret.clear();
+	std::for_each(mesh->vertices.begin(), mesh->vertices.end(), [&](const point& pt)
+	{
+		ret.push_back(point(pt[0], 0.0f, pt[2]));
+	});
+
+	std::sort(ret.begin(), ret.end(), [](const point& a, const point& b)
+	{
+		return a[0] < b[0];
+	});
+}

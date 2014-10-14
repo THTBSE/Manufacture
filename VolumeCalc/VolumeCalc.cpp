@@ -43,8 +43,12 @@ void volumeCalc::selected_sub_mesh_area()
 
 		for_each(_objMesh->adjacentfaces[pt].begin(), _objMesh->adjacentfaces[pt].end(),
 			[this,&selectedFacets](int i){
-			_objMesh->faces[i].beSelect = true; 
-			selectedFacets.push_back(i);
+			if (!_objMesh->faces[i].beSelect)
+			{
+				_objMesh->faces[i].beSelect = true;
+				selectedFacets.push_back(i);
+			}
+				
 		});
 		for_each(_objMesh->neighbors[pt].begin(), _objMesh->neighbors[pt].end(),
 			[&borderPoint, &traversed, &bfsPoints](int i){
@@ -56,7 +60,8 @@ void volumeCalc::selected_sub_mesh_area()
 		});
 	}
 
-	_subMeshFacets.push(selectedFacets);
+	if (!selectedFacets.empty())
+		_subMeshFacets.push(selectedFacets);
 }
 
 void volumeCalc::remove_a_sub_mesh_area()
@@ -212,6 +217,7 @@ void volumeCalc::choose_border_seed(int b, int s)
 void volumeCalc::draw()
 {
 	_edgeDetector.draw_borderline();
+	_edgeDetector.draw_project_curve();
 }
 
 bool volumeCalc::set_highlight(int k)
@@ -222,4 +228,9 @@ bool volumeCalc::set_highlight(int k)
 int volumeCalc::get_highlight(vector<int>& hl)
 {
 	return _edgeDetector.get_highlight(hl);
+}
+
+void volumeCalc::get_standard_curve(const TriMesh* mesh)
+{
+	_edgeDetector.get_standard_curve(mesh);
 }

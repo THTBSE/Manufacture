@@ -32,6 +32,11 @@ public:
 	bool set_highlight(int k);
 	int  get_highlight(vector<int>& hl);
 
+	//methods below will be modified or deleted later.   2014/10/14
+	void get_standard_curve(const TriMesh *mesh);
+	void draw_project_curve();
+	bool is_in_standard(const point& pt);
+
 private:
 	bool circle_finder(EdgeIter ei, vector<int>& pts);
 	TriMesh* objMesh;
@@ -39,6 +44,9 @@ private:
 	vector< vector<int> > featureCircle;
 	set<Pair> fEdges;
 	int highlightC;
+
+	//it will be modified or deleted later.   2014/10/14
+	vector<point> standardCurve;
 };
 
 #endif

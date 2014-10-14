@@ -42,6 +42,9 @@ public:
 	void	   selected_sub_mesh_area();
 	void	   remove_a_sub_mesh_area();
 
+	//it will be modified or deleted later.  2014/10/14
+	void	   get_standard_curve(const TriMesh *mesh);
+
 	~volumeCalc();
 private:
 	TriMesh*            _objMesh;
@@ -51,7 +54,9 @@ private:
 	vector<float>       _subVolume;
 	stack<vector<int> > _subMeshFacets;
 	float	   mesh_volume_calc(TriMesh* mesh);
+	//BFS and generate a mesh 
 	TriMesh*   generate_sub_mesh(const vector<int>& border, int seed);
+	//generate sub mesh according to facets in stack
 	void	   generate_all_sub_mesh();
 	void	   generate_single_sub_mesh(const vector<int>& meshFacetsIndex);
 };
