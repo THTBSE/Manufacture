@@ -1,5 +1,6 @@
 Debug/
 ipch/
+res/
 *.stl
 *.aps
 *.opensdf
