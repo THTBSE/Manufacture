@@ -1,0 +1,15 @@
+Debug/
+ipch/
+*.stl
+*.aps
+*.opensdf
+*.rc
+*.sln
+*.suo
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.txt
+*.zip
+*.bmp
+*.sdf
