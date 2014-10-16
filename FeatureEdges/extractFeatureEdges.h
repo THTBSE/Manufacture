@@ -10,9 +10,10 @@ in mesh surface.
 #include "../trimesh/include/TriMesh.h"
 #include <vector>
 #include <set>
+#include <queue>
 using std::set;
 using std::vector;
-
+using std::queue;
 
 typedef std::pair<int,int> Pair;
 typedef std::set<Pair>::iterator EdgeIter;
@@ -39,10 +40,13 @@ public:
 
 private:
 	bool circle_finder(EdgeIter ei, vector<int>& pts);
+	void group_finder(EdgeIter ei, set<Pair>& group);
+	void circle_finder(set<Pair>& group);
 	TriMesh* objMesh;
 	float diheralThr;
 	vector< vector<int> > featureCircle;
 	set<Pair> fEdges;
+	vector<set<Pair> > edgeGroups;
 	int highlightC;
 
 	//it will be modified or deleted later.   2014/10/14

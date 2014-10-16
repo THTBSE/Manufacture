@@ -9,7 +9,8 @@
 #include "GeometryProcDoc.h"
 
 #include <propkey.h>
-
+#include <chrono>
+#include <ctime>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -67,7 +68,6 @@ BOOL CGeometryProcDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		mesh->need_bbox();
 		meshes.push_back(mesh);
 		Current_mesh = meshes.size() - 1;
-
 		return TRUE;
 	}
 	return FALSE;

@@ -16,9 +16,9 @@ void FeatureEdges::extract_feature_edges()
 			{
 				int v1 = std::min(objMesh->faces[i][(j+1)%3],objMesh->faces[i][(j+2)%3]);
 				int v2 = std::max(objMesh->faces[i][(j+1)%3],objMesh->faces[i][(j+2)%3]);
-				if (!is_in_standard(objMesh->vertices[v1]) || 
-					!is_in_standard(objMesh->vertices[v2]))
-					continue;
+		//		if (!is_in_standard(objMesh->vertices[v1]) || 
+		//			!is_in_standard(objMesh->vertices[v2]))
+		//			continue;
 				Pair fedge(v1,v2);
 				pIter = fEdges.find(fedge);
 				if (pIter == fEdges.end())
@@ -30,6 +30,21 @@ void FeatureEdges::extract_feature_edges()
 	}
 	
 	objMesh->need_neighbors();
+	while (!fEdges.empty())
+	{
+		edgeGroups.push_back(set<Pair>());
+		pIter = fEdges.begin();
+		group_finder(pIter, edgeGroups.back());
+	}
+
+	
+	for (size_t i = 0; i < edgeGroups.size(); i++)
+	{
+		circle_finder(edgeGroups[i]);
+	}
+	
+	int breakit = 1;
+	/*
 	vector<int> tempEdges;
 	while (!fEdges.empty())
 	{
@@ -41,40 +56,106 @@ void FeatureEdges::extract_feature_edges()
 		}
 		else
 			featureCircle.push_back(tempEdges);
-		/*
-		else
-		{
-		EdgeIter pFinder;
-		int numberOfNextEdges(0);
-		numberOfNextEdges = std::count_if(objMesh->neighbors[pbeg].begin(),
-		objMesh->neighbors[pbeg].end(), [this,&pbeg,&pIter,&pFinder](int pjoint)
-		{
-		pFinder = fEdges.find(Pair(std::min(pbeg, pjoint), std::max(pbeg, pjoint)));
-		if (pFinder != fEdges.end())
-		{
-		pIter = pFinder;
-		return true;
-		}
-		else
-		return false;
-		});
-
-		if (numberOfNextEdges == 1)
-		{
-		vector<int> otherDirEdges;
-		bool nil = circle_finder(pIter, otherDirEdges);
-		std::reverse(otherDirEdges.begin(), otherDirEdges.end());
-		otherDirEdges.pop_back();
-		featureCircle.push_back(otherDirEdges);
-		featureCircle.back().insert(featureCircle.back().end(), tempEdges.begin(),
-		tempEdges.end());
-		}
-		}
-		*/
 		tempEdges.clear();
+	}*/
+}
+
+void FeatureEdges::group_finder(EdgeIter ei, set<Pair>& group)
+{
+	int pbeg1(ei->first), pbeg2(ei->second);
+	group.insert(*ei);
+	fEdges.erase(ei);
+	EdgeIter pFinder;
+	queue<int> pathPoint;
+	pathPoint.push(pbeg1);
+	pathPoint.push(pbeg2);
+
+	while (!pathPoint.empty())
+	{
+		int endPoint1 = pathPoint.front();
+		pathPoint.pop();
+		std::for_each(objMesh->neighbors[endPoint1].begin(), objMesh->neighbors[endPoint1].end(),
+			[&,this](int endPoint2)
+		{
+
+			Pair theEdge(std::min(endPoint1, endPoint2),
+				std::max(endPoint1, endPoint2));
+			if (!group.count(theEdge))
+			{
+				pFinder = fEdges.find(theEdge);
+				if (pFinder != fEdges.end())
+				{
+					pathPoint.push(endPoint2);
+					fEdges.erase(pFinder);
+					group.insert(theEdge);
+				}
+			}
+		});
 	}
 }
 
+void FeatureEdges::circle_finder(set<Pair>& group)
+{
+	if (group.empty())
+		return;
+	set<int> vertices;
+	std::for_each(group.begin(), group.end(), [&](const Pair& edge)
+	{
+		vertices.insert(edge.first);
+		vertices.insert(edge.second);
+	});
+
+	//find the vertex which z value is max 
+	set<int>::iterator maxIndex;
+	maxIndex = std::max_element(vertices.begin(), vertices.end(), [this](int a, int b)
+	{
+		return objMesh->vertices[a][2] < objMesh->vertices[b][2];
+	});
+
+	assert(maxIndex != vertices.end());
+	int pathPoint(*maxIndex);
+	int pbegin(pathPoint);
+	set<Pair>::iterator pFinder;
+	featureCircle.push_back(vector<int>());
+	vector<int>& currCircle = featureCircle.back();
+	vec base_normal(0.0f, 0.0f, 1.0f);
+	currCircle.push_back(pathPoint);
+	while (!objMesh->neighbors[pathPoint].empty())
+	{
+		vector<int> pNew;
+		for (size_t i = 0; i < objMesh->neighbors[pathPoint].size(); i++)
+		{
+			int pNext(objMesh->neighbors[pathPoint][i]);
+			if (pNext == pbegin && currCircle.size() > 2)
+				break;
+			pFinder = group.find(Pair(std::min(pathPoint, pNext), std::max(pathPoint, pNext)));
+			if (pFinder != group.end())
+			{
+				pNew.push_back(pNext);
+				group.erase(pFinder);
+			}
+		}
+		if (pNew.empty())
+			break;
+		float minAngle = std::numeric_limits<float>::max();
+		int minIndex;
+		for (size_t i = 0; i < pNew.size(); i++)
+		{
+			vec v = objMesh->vertices[pNew[i]] - objMesh->vertices[pathPoint];
+			float tmpAngle = angle(v, base_normal);
+			if (tmpAngle < minAngle)
+			{
+				minIndex = static_cast<int>(i);
+				minAngle = tmpAngle;
+			}
+		}
+		 currCircle.push_back(pNew[minIndex]);
+		pathPoint = pNew[minIndex];
+		if (pathPoint == pbegin)
+			break;
+	}
+
+}
 bool FeatureEdges::circle_finder(EdgeIter ei, vector<int>& pts)
 {
 	int pbeg,pprev;
@@ -130,9 +211,9 @@ void FeatureEdges::draw_borderline()
 {
 	if (featureCircle.empty())
 		return;
-
+	
 	glEnable(GL_COLOR_MATERIAL);
-	for (size_t i=0; i<featureCircle.size(); i++)
+	for (size_t i=1; i<featureCircle.size(); i++)
 	{
 		if (highlightC == i)
 			glColor3f(1.0f,0.0f,0.0f);
@@ -147,6 +228,25 @@ void FeatureEdges::draw_borderline()
 		glEnd();
 	}
 	glDisable(GL_COLOR_MATERIAL);
+	
+	/*
+	if (edgeGroups.empty())
+		return;
+	glEnable(GL_COLOR_MATERIAL);
+	glLineWidth(5);
+	glColor3f(1.0f, 1.0f, 0.0f);
+	glBegin(GL_LINES);
+	for (size_t i = 0; i < 1; i++)
+	{
+		std::for_each(edgeGroups[i].begin(), edgeGroups[i].end(), [&, this](const Pair& e)
+		{
+			glVertex3fv(&objMesh->vertices[e.first][0]);
+			glVertex3fv(&objMesh->vertices[e.second][0]);
+		});
+	}
+	glEnd();
+	glDisable(GL_COLOR_MATERIAL);
+	*/
 }
 
 //k is the point index 
