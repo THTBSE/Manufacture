@@ -217,7 +217,6 @@ void volumeCalc::choose_border_seed(int b, int s)
 void volumeCalc::draw()
 {
 	_edgeDetector.draw_borderline();
-	_edgeDetector.draw_project_curve();
 }
 
 bool volumeCalc::set_highlight(int k)
@@ -228,9 +227,4 @@ bool volumeCalc::set_highlight(int k)
 int volumeCalc::get_highlight(vector<int>& hl)
 {
 	return _edgeDetector.get_highlight(hl);
-}
-
-void volumeCalc::get_standard_curve(const TriMesh* mesh)
-{
-	_edgeDetector.get_standard_curve(mesh);
 }

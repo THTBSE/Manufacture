@@ -16,9 +16,6 @@ void FeatureEdges::extract_feature_edges()
 			{
 				int v1 = std::min(objMesh->faces[i][(j+1)%3],objMesh->faces[i][(j+2)%3]);
 				int v2 = std::max(objMesh->faces[i][(j+1)%3],objMesh->faces[i][(j+2)%3]);
-		//		if (!is_in_standard(objMesh->vertices[v1]) || 
-		//			!is_in_standard(objMesh->vertices[v2]))
-		//			continue;
 				Pair fedge(v1,v2);
 				pIter = fEdges.find(fedge);
 				if (pIter == fEdges.end())
@@ -43,7 +40,6 @@ void FeatureEdges::extract_feature_edges()
 		circle_finder(edgeGroups[i]);
 	}
 	
-	int breakit = 1;
 	/*
 	vector<int> tempEdges;
 	while (!fEdges.empty())
@@ -119,16 +115,18 @@ void FeatureEdges::circle_finder(set<Pair>& group)
 	featureCircle.push_back(vector<int>());
 	vector<int>& currCircle = featureCircle.back();
 	vec base_normal(0.0f, 0.0f, 1.0f);
-	currCircle.push_back(pathPoint);
+	currCircle.push_back(pathPoint); 
 	while (!objMesh->neighbors[pathPoint].empty())
 	{
 		vector<int> pNew;
 		for (size_t i = 0; i < objMesh->neighbors[pathPoint].size(); i++)
 		{
 			int pNext(objMesh->neighbors[pathPoint][i]);
-			if (pNext == pbegin && currCircle.size() > 2)
-				break;
-			pFinder = group.find(Pair(std::min(pathPoint, pNext), std::max(pathPoint, pNext)));
+			if (pNext == pbegin && currCircle.size() > 2)   //the second point's 
+				break;										//neighbor contain pbegin
+															//and currCircle.size()==2
+			pFinder = group.find(Pair(std::min(pathPoint, pNext), 
+				std::max(pathPoint, pNext)));
 			if (pFinder != group.end())
 			{
 				pNew.push_back(pNext);
@@ -156,6 +154,7 @@ void FeatureEdges::circle_finder(set<Pair>& group)
 	}
 
 }
+
 bool FeatureEdges::circle_finder(EdgeIter ei, vector<int>& pts)
 {
 	int pbeg,pprev;
@@ -275,63 +274,3 @@ int FeatureEdges::get_highlight(vector<int>& hl)
 	return highlightC;
 }
 
-void FeatureEdges::get_standard_curve(const TriMesh* mesh)
-{
-	vfclToolkit::projectToXZPlane(standardCurve, mesh);
-}
-
-bool FeatureEdges::is_in_standard(const point& pt)
-{
-	//if non standardCurve , keep all.
-	if (standardCurve.empty())
-		return true;
-	vector<point>::iterator iter;
-	iter = std::lower_bound(standardCurve.begin(), standardCurve.end(), pt, []
-		(const point& a, const point& b){return a[0] < b[0]; });
-
-	if (iter == standardCurve.end())
-		return false;
-	const point& pp = *iter;
-	if (iter == standardCurve.begin())
-	{
-		if (pp[0] - pt[0] > 0.2)
-			return false;
-	}
-	
-	/*
-	const point& prev = *(iter - 1);
-	const point& curr = *(iter);
-	point zlower = std::min(curr, prev, [](const point& a, const point& b)
-	{return a[2] < b[2]; });
-	point zupper = std::max(curr, prev, [](const point& a, const point& b)
-	{return a[2] < b[2]; });
-	
-	if (zlower[2] < pt[2] && pt[2] < zupper[2])
-		return true;
-	else
-		return false;
-	*/
-	
-//	const point& pp = *(iter);
-	float d = fabs(pp[2] - pt[2]);
-	if (d < 0.2f)
-		return true;
-	else
-		return false;
-}
-
-void FeatureEdges::draw_project_curve()
-{
-	if (standardCurve.empty())
-		return;
-	
-	glEnable(GL_COLOR_MATERIAL);
-	glBegin(GL_LINE_STRIP);
-	glLineWidth(5.0f);
-	std::for_each(standardCurve.begin(), standardCurve.end(), [](const point& v)
-	{
-		glVertex3fv(&v[0]);
-	});
-	glEnd();
-	glDisable(GL_COLOR_MATERIAL);
-}
