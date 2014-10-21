@@ -18,8 +18,8 @@ namespace CGGToolKit
 				d = dirOrPoint;
 		}
 
-		const point& origin() const;
-		const vec& direction() const;
+		const point& origin() const { return p; }
+		const vec& direction() const { return d; }
 	protected:
 		point p;
 		vec   d;

@@ -25,7 +25,7 @@ public:
 	void addConstraintPlane(const Plane& plane, bool isIncluded);
 	const vector<int>& outputBorderline(int k) const;
 	virtual void getContour() = 0;
-
+	virtual void drawContour() const;
 protected:
 	TriMesh* objMesh;
 	float diheralThr;
@@ -34,7 +34,6 @@ protected:
 	Plane standardPlane;
 	vector< vector<int> > featureCircle;
 	set<Pair> fEdges;
-
 private:
 	void removeEdges(const vector<Plane>& planes, vector<Pair>& edgeFilter, bool isKeep);
 };

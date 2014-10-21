@@ -1,4 +1,5 @@
 #include "featureEdges.h"
+#include "../opengl/glew.h"
 
 void featureEdges::getBaseEdges()
 {
@@ -36,9 +37,11 @@ void featureEdges::getBaseEdges()
 	{
 		removeEdges(dumpInPlane, edgeFilter, false);
 	}
+	fEdges.clear();
+	std::copy(edgeFilter.begin(), edgeFilter.end(), std::inserter(fEdges, fEdges.begin()));
 }
 
-inline
+
 void featureEdges::addConstraintPlane(const Plane& plane, bool isIncluded)
 {
 	if (isIncluded)
@@ -50,12 +53,14 @@ void featureEdges::addConstraintPlane(const Plane& plane, bool isIncluded)
 void featureEdges::removeEdges(const vector<Plane>& planes, vector<Pair>& edgeFilter, bool isKeep)
 {
 	vector<Pair>::iterator filterIter;
-	filterIter = std::remove_if(edgeFilter.begin(), edgeFilter.end(), [&isKeep,this](const Pair& e)
+	bool initialFlag = isKeep;
+	filterIter = std::remove_if(edgeFilter.begin(), edgeFilter.end(), [&,this](const Pair& e)
 	{
-		for (auto i = 0; i != keepInPlane.size(); ++i)
+		isKeep = initialFlag;
+		for (auto i = 0; i != planes.size(); ++i)
 		{
 			Line3D seg(objMesh->vertices[e.first], objMesh->vertices[e.second], true);
-			auto ret = intersection3D::lineIntersectPlane(seg, keepInPlane[i]);
+			auto ret = intersection3D::lineIntersectPlane(seg, planes[i]);
 			if (std::get<0>(ret) == CGG_COINCIDE)
 			{
 				isKeep = !isKeep;
@@ -71,4 +76,21 @@ const vector<int>& featureEdges::outputBorderline(int k) const
 {
 	assert(k<featureCircle.size());
 	return featureCircle[k];
+}
+
+void featureEdges::drawContour() const
+{
+	if (fEdges.empty())
+		return;
+	glEnable(GL_COLOR_MATERIAL);
+	glColor3f(1.0f, 1.0f, 0.0f);
+	glLineWidth(5.0f);
+	glBegin(GL_LINES);
+	std::for_each(fEdges.begin(), fEdges.end(), [this](const Pair& e)
+	{
+		glVertex3fv(&objMesh->vertices[e.first][0]);
+		glVertex3fv(&objMesh->vertices[e.second][0]);
+	});
+	glEnd();
+	glDisable(GL_COLOR_MATERIAL);
 }
