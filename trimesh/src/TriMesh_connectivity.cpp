@@ -9,6 +9,7 @@ Manipulate data structures that describe connectivity between faces and verts.
 #include <algorithm>
 #include <queue>
 #include <map>
+#include <set>
 using std::queue;
 using std::find;
 
@@ -418,5 +419,41 @@ void TriMesh::zone_select(vector<int>& bj, vector<int>& zone, vector<int>& SelFa
 			SelFaces.push_back(t);
 			fangwen[t]=true;
 		}
+	}
+}
+
+void bfs_mesh_select(TriMesh* mesh, std::vector<int>& boundary, int seed)
+{
+	if (!mesh)
+		return;
+	mesh->need_neighbors();
+	mesh->need_adjacentfaces();
+	std::set<int> borderPoint(boundary.begin(), boundary.end());
+	std::set<int> traversed;
+	queue<int> bfsPoints;
+	bfsPoints.push(seed);
+	traversed.insert(seed);
+
+	while (!bfsPoints.empty())
+	{
+		int pt = bfsPoints.front();
+		bfsPoints.pop();
+
+		for_each(mesh->adjacentfaces[pt].begin(), mesh->adjacentfaces[pt].end(),
+			[mesh](int i){
+			if (!mesh->faces[i].beSelect)
+			{
+				mesh->faces[i].beSelect = true;
+			}
+
+		});
+		for_each(mesh->neighbors[pt].begin(), mesh->neighbors[pt].end(),
+			[&](int i){
+			if (!borderPoint.count(i) && !traversed.count(i))
+			{
+				traversed.insert(i);
+				bfsPoints.push(i);
+			}
+		});
 	}
 }

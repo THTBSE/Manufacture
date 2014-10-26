@@ -34,6 +34,19 @@ protected:
 	Plane standardPlane;
 	vector< vector<int> > featureCircle;
 	set<Pair> fEdges;
+
+	//Linking two nodes which are not adjacent to each other,
+	//the algorithm behind this function is Dijkstra shorest path.
+	//The 'start' and 'end' both are vertex index of the objMesh,
+	//and it return the vertices array from 'end' to 'start' but excluding these
+	//two nodes.And do not warry about returning a Large vector<int>,I use 
+	//std::move() :D  
+	vector<int> linkNonAdjacent(int start, int end);
+
+	//Getting triangles inside featureCirlces;
+	void getTriInside();
 private:
 	void removeEdges(const vector<Plane>& planes, vector<Pair>& edgeFilter, bool isKeep);
+	//Getting a vertex index inside a featureCircle.
+	int getVertexInside(const vector<int>& circle) const;
 };

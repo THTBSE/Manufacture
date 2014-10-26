@@ -19,6 +19,9 @@ void baseExtract::getContour()
 	{
 		circleFinder(edgeGroups[i]);
 	}
+
+	makeClosed();
+	getTriInside();
 }
 
 void baseExtract::groupFinder(EdgeIter ei, set<Pair>& group)
@@ -119,7 +122,7 @@ void baseExtract::circleFinder(set<Pair>& group)
 
 	
 	if (canClose)
-		featureCircle.push_back(circleA);
+		featureCircle.push_back(std::move(circleA));
 	else
 	{
 		if (pSideB != -1)
@@ -127,12 +130,14 @@ void baseExtract::circleFinder(set<Pair>& group)
 			vector<int> circleB;
 			canClose = linkAdjacent(pOrigin, pSideB, group, circleB);
 			std::reverse(circleB.begin(), circleB.end());
-			unClosedCircle.push_back(circleB);
-			unClosedCircle.back().insert(unClosedCircle.back().end(), circleA.begin(),
-				circleA.end());
+			circleB.insert(circleB.end(), circleA.begin(), circleA.end());
+			if (isNeighbor(circleB.front(), circleB.back()))
+				featureCircle.push_back(std::move(circleB));
+			else
+				unClosedCircle.push_back(std::move(circleB));
 		}
 		else
-			unClosedCircle.push_back(circleA);
+			unClosedCircle.push_back(std::move(circleA));
 	}
 }
 
@@ -222,4 +227,29 @@ void baseExtract::drawContour() const
 		glEnd();
 	}
 	glDisable(GL_COLOR_MATERIAL);
+}
+
+void baseExtract::makeClosed()
+{
+	if (unClosedCircle.empty())
+		return;
+
+	for (auto &uCC : unClosedCircle)
+	{
+		if (uCC.empty() || uCC[0] == uCC.back())
+			continue;
+
+		int start = uCC.front(), end = uCC.back();
+		vector<int> trail = linkNonAdjacent(start, end);
+		if (trail.empty())
+			continue;
+		uCC.insert(uCC.end(), trail.begin(), trail.end());
+//		featureCircle.push_back(std::move(uCC));
+	}
+}
+
+bool baseExtract::isNeighbor(int a, int b) const
+{
+	auto iter = std::find(objMesh->neighbors[a].begin(), objMesh->neighbors[a].end(), b);
+	return iter != objMesh->neighbors[a].end();
 }

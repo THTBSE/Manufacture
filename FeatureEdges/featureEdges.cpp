@@ -1,5 +1,8 @@
 #include "featureEdges.h"
 #include "../opengl/glew.h"
+#include "../BaseToolClass/dijkstrapath.h"
+#include "../trimesh/include/TriMesh_algo.h"
+#include <functional>
 
 void featureEdges::getBaseEdges()
 {
@@ -93,4 +96,43 @@ void featureEdges::drawContour() const
 	});
 	glEnd();
 	glDisable(GL_COLOR_MATERIAL);
+}
+
+vector<int> featureEdges::linkNonAdjacent(int start, int end)
+{
+	DijkstraPath linker(objMesh, start, end);
+	linker.RunDijkstra();
+	return std::move(linker.output());
+}
+
+int featureEdges::getVertexInside(const vector<int>& circle) const
+{
+	assert(!circle.empty());
+
+	int borderVertex = circle.front();
+	std::map<double, int, std::greater<float> > angleIndex;
+	objMesh->need_neighbors();
+
+	for (auto id : objMesh->neighbors[borderVertex])
+	{
+		auto iter = std::find(circle.begin(), circle.end(), id);
+		if (iter != circle.end())
+			continue;
+		vec edgeVector = objMesh->vertices[id] - objMesh->vertices[borderVertex];
+		float Angle = angle(standardPlane.normal(), edgeVector);
+		angleIndex.insert(make_pair(Angle, id));
+	}
+	assert(!angleIndex.empty());
+	return angleIndex.begin()->second;
+}
+
+void featureEdges::getTriInside()
+{
+	if (featureCircle.empty())
+		return;
+	for (size_t i = 1; i < featureCircle.size(); ++i)
+	{
+		int seed = getVertexInside(featureCircle[i]);
+		bfs_mesh_select(objMesh, featureCircle[i], seed);
+	}
 }
