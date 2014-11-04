@@ -28,8 +28,7 @@ CGeometryProcDoc::CGeometryProcDoc()
 {
 	//View Function
 	m_BackGroundColor = CHANGE_LIGHT_BLUE;
-	m_ShaderModel = SMOOTH_SHADER;
-
+	m_ShaderModel = PLANE_SHADER;
 }
 
 CGeometryProcDoc::~CGeometryProcDoc()

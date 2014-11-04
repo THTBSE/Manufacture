@@ -101,7 +101,7 @@ void FeatureEdges::circle_finder(set<Pair>& group)
 		vertices.insert(edge.second);
 	});
 
-	//find the vertex which z value is max 
+	//find the furthest vertex to the base plane 
 	set<int>::iterator maxIndex;
 	maxIndex = std::max_element(vertices.begin(), vertices.end(), [this](int a, int b)
 	{

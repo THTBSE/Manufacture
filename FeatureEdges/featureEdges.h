@@ -4,9 +4,11 @@
 #include <vector>
 #include <set>
 #include <queue>
+#include <stack>
 using std::set;
 using std::vector;
 using std::queue;
+using std::stack;
 using namespace CGGToolKit;
 
 typedef std::pair<int, int> Pair;
@@ -26,6 +28,8 @@ public:
 	const vector<int>& outputBorderline(int k) const;
 	virtual void getContour() = 0;
 	virtual void drawContour() const;
+	//Getting triangles inside featureCirlces;
+	void getTriInside(stack<vector<int>>& selectedFacets);
 protected:
 	TriMesh* objMesh;
 	float diheralThr;
@@ -43,8 +47,6 @@ protected:
 	//std::move() :D  
 	vector<int> linkNonAdjacent(int start, int end);
 
-	//Getting triangles inside featureCirlces;
-	void getTriInside();
 private:
 	void removeEdges(const vector<Plane>& planes, vector<Pair>& edgeFilter, bool isKeep);
 	//Getting a vertex index inside a featureCircle.

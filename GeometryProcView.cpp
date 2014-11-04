@@ -189,25 +189,48 @@ void CGeometryProcView::LButtonDownController(const CPoint& ScreenPoint)
 	{
 	case vfclController::VOLUMECALC:
 		{
-			vector<vec2> sp;
-			vector<int> borderline;
-			vec p = COpenglSelection::GetMousePoint3D(m_pGLDC,ScreenPoint);
-			int k = vfclToolkit::PointOnMesh(pDoc->meshes[pDoc->Current_mesh],p);
-			if (k == -1 || !pDoc->VCalcInstance.set_highlight(k))
-				return;
-			int bdr = pDoc->VCalcInstance.get_highlight(borderline);
-			circleSelection::toScreen(pDoc->meshes[pDoc->Current_mesh],borderline,sp,m_pGLDC);
-			vec2 insidep = circleSelection::getPointWithinCircle(sp);
-			vec seed = COpenglSelection::GetMousePoint3D(m_pGLDC,CPoint(insidep[0],insidep[1]));
-			int seedIndex = vfclToolkit::PointOnMesh(pDoc->meshes[pDoc->Current_mesh],seed);
-			if (seedIndex == -1)
-			{
-				AfxMessageBox(_T("未能完成选取，尝试着把待选取边界正对自己"));
-				return;
-			}
-			pDoc->VCalcInstance.choose_border_seed(bdr, seedIndex);
-			pDoc->VCalcInstance.selected_sub_mesh_area();
+			//vector<vec2> sp;
+			//vector<int> borderline;
+			//vec p = COpenglSelection::GetMousePoint3D(m_pGLDC,ScreenPoint);
+			//int k = vfclToolkit::PointOnMesh(pDoc->meshes[pDoc->Current_mesh],p);
+			//if (k == -1 || !pDoc->VCalcInstance.set_highlight(k))
+			//	return;
+			//int bdr = pDoc->VCalcInstance.get_highlight(borderline);
+			//circleSelection::toScreen(pDoc->meshes[pDoc->Current_mesh],borderline,sp,m_pGLDC);
+			//vec2 insidep = circleSelection::getPointWithinCircle(sp);
+			//vec seed = COpenglSelection::GetMousePoint3D(m_pGLDC,CPoint(insidep[0],insidep[1]));
+			//int seedIndex = vfclToolkit::PointOnMesh(pDoc->meshes[pDoc->Current_mesh],seed);
+			//if (seedIndex == -1)
+			//{
+			//	AfxMessageBox(_T("未能完成选取，尝试着把待选取边界正对自己"));
+			//	return;
+			//}
+			//pDoc->VCalcInstance.choose_border_seed(bdr, seedIndex);
+			//pDoc->VCalcInstance.selected_sub_mesh_area();
 		}
+		break;
+	case vfclController::SETPLANE:
+	{
+		TriMesh* mesh = pDoc->meshes[pDoc->Current_mesh];
+		mesh->need_adjacentfaces();
+		vec p = COpenglSelection::GetMousePoint3D(m_pGLDC, ScreenPoint);
+		int fIndex = vfclToolkit::GetFacetByPoint(mesh, p);
+		if (fIndex == -1)
+		{
+			MessageBox(_T("未能选中面片，请重新选择"));
+			return;
+		}
+		else
+		{
+			std::vector<point>& vertices = mesh->vertices;
+			TriMesh::Face& triFacet = mesh->faces[fIndex];
+			triFacet.beSelect = true;
+			CGGToolKit::Plane plane(vertices[triFacet[0]], vertices[triFacet[1]], vertices[triFacet[2]]);
+			pDoc->VCalcInstance.set_plane(plane);
+		}
+		pDoc->procController.change_proc(vfclController::NIL);
+	}
+		break;
 	default:
 		break;
 	}

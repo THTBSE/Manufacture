@@ -126,13 +126,16 @@ int featureEdges::getVertexInside(const vector<int>& circle) const
 	return angleIndex.begin()->second;
 }
 
-void featureEdges::getTriInside()
+void featureEdges::getTriInside(stack<vector<int>>& selectedFacets)
 {
 	if (featureCircle.empty())
 		return;
 	for (size_t i = 1; i < featureCircle.size(); ++i)
 	{
 		int seed = getVertexInside(featureCircle[i]);
-		bfs_mesh_select(objMesh, featureCircle[i], seed);
+		std::vector<int> sFacets = 
+			bfs_mesh_select(objMesh, featureCircle[i], seed);
+		if (!sFacets.empty())
+			selectedFacets.push(std::move(sFacets));
 	}
 }

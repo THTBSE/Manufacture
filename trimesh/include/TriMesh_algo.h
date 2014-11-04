@@ -158,7 +158,8 @@ extern float mesh_volume(TriMesh* mesh);
 //Breadth first search for selecting mesh triangles.It need a boundary 
 //constitute of vertices,and a seed vertex within a boundary.If boundary vertices
 //are empty, it will select all triangles of the mesh.
-extern void bfs_mesh_select(TriMesh* mesh, std::vector<int>& boundary, int seed);
+extern std::vector<int> 
+bfs_mesh_select(TriMesh* mesh,const std::vector<int>& boundary, int seed);
 
 extern double		CalcArea(point  A, point B, point C);
 extern void			Calcuvw(point P,point A, point B, point C, double &u, double &v, double &w);	//计算点在三角形内的面积坐标

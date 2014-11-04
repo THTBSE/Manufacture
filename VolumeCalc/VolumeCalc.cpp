@@ -22,46 +22,7 @@ float volumeCalc::mesh_volume_calc(TriMesh* mesh)
 
 void volumeCalc::selected_sub_mesh_area()
 {
-	if (_bsIndex.empty())
-		return;
-	const vector<int>& border = _edgeDetector.output_borderline(_bsIndex.back().first);
-	const int seed = _bsIndex.back().second;
-	_bsIndex.pop_back();
-	_objMesh->need_neighbors();
-	_objMesh->need_adjacentfaces();
-	vector<int> selectedFacets;
-	set<int> borderPoint(border.begin(), border.end());
-	set<int> traversed;
-	queue<int> bfsPoints;
-	bfsPoints.push(seed);
-	traversed.insert(seed);
-
-	while (!bfsPoints.empty())
-	{
-		int pt = bfsPoints.front();
-		bfsPoints.pop();
-
-		for_each(_objMesh->adjacentfaces[pt].begin(), _objMesh->adjacentfaces[pt].end(),
-			[this,&selectedFacets](int i){
-			if (!_objMesh->faces[i].beSelect)
-			{
-				_objMesh->faces[i].beSelect = true;
-				selectedFacets.push_back(i);
-			}
-				
-		});
-		for_each(_objMesh->neighbors[pt].begin(), _objMesh->neighbors[pt].end(),
-			[&borderPoint, &traversed, &bfsPoints](int i){
-			if (!borderPoint.count(i) && !traversed.count(i))
-			{
-				traversed.insert(i);
-				bfsPoints.push(i);
-			}
-		});
-	}
-
-	if (!selectedFacets.empty())
-		_subMeshFacets.push(selectedFacets);
+	_edgeGetter->getTriInside(_subMeshFacets);
 }
 
 void volumeCalc::remove_a_sub_mesh_area()
@@ -115,92 +76,19 @@ void volumeCalc::generate_single_sub_mesh(const vector<int>& meshFacetsIndex)
 	_subMesh.push_back(mesh);
 }
 
-TriMesh* volumeCalc::generate_sub_mesh(const vector<int>& border, int seed)
-{
-	TriMesh* mesh = NULL;
-	if (seed == -1)
-		return mesh;
-	
-	mesh = new TriMesh;
-	_objMesh->need_neighbors();
-	_objMesh->need_adjacentfaces();
-	set<int> borderPoint(border.begin(),border.end());
-	set<int> traversed; 
-	queue<int> bfsPoints;
-	bfsPoints.push(seed);
-	traversed.insert(seed);
-
-	while (!bfsPoints.empty())
-	{
-		int pt = bfsPoints.front();
-		bfsPoints.pop();
-
-		for_each(_objMesh->adjacentfaces[pt].begin(),_objMesh->adjacentfaces[pt].end(),
-			[this](int i){_objMesh->faces[i].beSelect = true;});
-		for_each(_objMesh->neighbors[pt].begin(),_objMesh->neighbors[pt].end(),
-			[&borderPoint,&traversed,&bfsPoints](int i){
-				if (!borderPoint.count(i) && !traversed.count(i))
-				{
-					traversed.insert(i);
-					bfsPoints.push(i);
-				}
-		});
-	}
-
-	map<int,int> vertexMap;
-	map<int,int>::iterator vIter;
-	for_each(_objMesh->faces.begin(),_objMesh->faces.end(),
-		[this,&mesh,&vertexMap,&vIter](TriMesh::Face& trif){
-			if (trif.beSelect)
-			{
-				TriMesh::Face tmpf;
-				for (int i=0,j=2; i<3; i++,j--)
-				{
-					vIter = vertexMap.find(trif[i]);
-					if (vIter == vertexMap.end())
-					{
-						mesh->vertices.push_back(_objMesh->vertices[trif[i]]);
-						tmpf[j] = mesh->vertices.size() - 1;
-						vertexMap.insert(make_pair(trif[i],tmpf[j]));
-					}
-					else
-					{
-						tmpf[j] = vIter->second;
-					}
-				}
-				mesh->faces.push_back(tmpf);
-			}
-	});
-
-	mesh->need_normals();
-	return mesh;
-}
-
 
 void volumeCalc::detect_borderline()
 {
 	assert(_objMesh);
 	if (!_objMesh)
 		return;
-	_edgeDetector.set_mesh(_objMesh);
-	_edgeDetector.extract_feature_edges();
+	_edgeGetter->getBaseEdges();
+	_edgeGetter->getContour();
 }
 
 // bug was fixed ! nice ! 
 void volumeCalc::start_compute()
 {
-	/*
-	if (_bsIndex.empty())
-	return;
-
-	TriMesh* mesh = NULL;
-	for_each(_bsIndex.begin(),_bsIndex.end(),[this,&mesh](BorderSeed bs){
-	mesh = generate_sub_mesh(_edgeDetector.output_borderline(bs.first),bs.second);
-	_subMesh.push_back(mesh);
-	_subVolume.push_back(mesh_volume_calc(mesh));
-	});
-	*/
-
 	if (_subMesh.empty())
 		return;
 	std::for_each(_subMesh.begin(), _subMesh.end(), [this](TriMesh* mesh)
@@ -216,15 +104,58 @@ void volumeCalc::choose_border_seed(int b, int s)
 
 void volumeCalc::draw()
 {
-	_edgeDetector.draw_borderline();
+	if (_edgeGetter)
+		_edgeGetter->drawContour();
 }
 
-bool volumeCalc::set_highlight(int k)
+//bool volumeCalc::set_highlight(int k)
+//{
+//	return _edgeDetector.set_highlight(k);
+//}
+//
+//int volumeCalc::get_highlight(vector<int>& hl)
+//{
+//	return _edgeDetector.get_highlight(hl);
+//}
+
+void volumeCalc::set_edgeGetter(int method)
 {
-	return _edgeDetector.set_highlight(k);
+	if (_edgeGetter)
+		return;
+	switch (method)
+	{
+	case 1:
+	{
+		_edgeGetter = std::make_shared<baseExtract>(baseExtract());
+		_edgeGetter->setMesh(_objMesh);
+		break;
+	}
+		default:
+		break;
+	}
 }
 
-int volumeCalc::get_highlight(vector<int>& hl)
+void volumeCalc::set_plane(const Plane& plane)
 {
-	return _edgeDetector.get_highlight(hl);
+	assert(_edgeGetter);
+	switch (planeType)
+	{
+	case 0:
+	{
+		_edgeGetter->setBasePlane(plane);
+		break;
+	}
+	case 1:
+	{
+		_edgeGetter->addConstraintPlane(plane, true);
+		break;
+	}
+	case 2:
+	{
+		_edgeGetter->addConstraintPlane(plane, false);
+		break;
+	}
+	default:
+		break;
+	}
 }

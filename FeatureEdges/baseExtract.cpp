@@ -21,7 +21,6 @@ void baseExtract::getContour()
 	}
 
 	makeClosed();
-	getTriInside();
 }
 
 void baseExtract::groupFinder(EdgeIter ei, set<Pair>& group)
@@ -244,7 +243,7 @@ void baseExtract::makeClosed()
 		if (trail.empty())
 			continue;
 		uCC.insert(uCC.end(), trail.begin(), trail.end());
-//		featureCircle.push_back(std::move(uCC));
+		featureCircle.push_back(std::move(uCC));
 	}
 }
 

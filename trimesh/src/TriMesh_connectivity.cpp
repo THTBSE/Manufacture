@@ -422,10 +422,11 @@ void TriMesh::zone_select(vector<int>& bj, vector<int>& zone, vector<int>& SelFa
 	}
 }
 
-void bfs_mesh_select(TriMesh* mesh, std::vector<int>& boundary, int seed)
+std::vector<int>
+bfs_mesh_select(TriMesh* mesh,const std::vector<int>& boundary, int seed)
 {
 	if (!mesh)
-		return;
+		return{};
 	mesh->need_neighbors();
 	mesh->need_adjacentfaces();
 	std::set<int> borderPoint(boundary.begin(), boundary.end());
@@ -433,21 +434,24 @@ void bfs_mesh_select(TriMesh* mesh, std::vector<int>& boundary, int seed)
 	queue<int> bfsPoints;
 	bfsPoints.push(seed);
 	traversed.insert(seed);
+	vector<int> selectedTris;
 
 	while (!bfsPoints.empty())
 	{
 		int pt = bfsPoints.front();
 		bfsPoints.pop();
 
-		for_each(mesh->adjacentfaces[pt].begin(), mesh->adjacentfaces[pt].end(),
-			[mesh](int i){
-			if (!mesh->faces[i].beSelect)
-			{
-				mesh->faces[i].beSelect = true;
-			}
+		//if there is a triangle had been selected yet , the boundary is useless 
+		//we don't need these , so return . 
+		for (auto index : mesh->adjacentfaces[pt])
+		{
+			if (!mesh->faces[index].beSelect)
+				selectedTris.push_back(index);
+			else
+				return{};
+		}
 
-		});
-		for_each(mesh->neighbors[pt].begin(), mesh->neighbors[pt].end(),
+		std::for_each(mesh->neighbors[pt].begin(), mesh->neighbors[pt].end(),
 			[&](int i){
 			if (!borderPoint.count(i) && !traversed.count(i))
 			{
@@ -456,4 +460,10 @@ void bfs_mesh_select(TriMesh* mesh, std::vector<int>& boundary, int seed)
 			}
 		});
 	}
+
+	std::for_each(selectedTris.begin(), selectedTris.end(), [mesh](int i)
+	{
+		mesh->faces[i].beSelect = true;
+	});
+	return std::move(selectedTris);
 }

@@ -5,6 +5,7 @@
 #include "trimesh/include/TriMesh.h"
 #include "VolumeCalc/VolumeCalc.h"
 #include "Contoller/Controller.h"
+#include "FeatureEdges\baseExtract.h"
 using namespace ViewSpace;
 
 
@@ -28,6 +29,7 @@ public:
 
 //Volume Calculator
 	volumeCalc		VCalcInstance;
+
 public:
 
 

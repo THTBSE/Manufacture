@@ -1,5 +1,7 @@
 #include "FCLToolkit.h"
 #include "../trimesh/include/KDtree.h"
+#include "../trimesh/include/TriMesh_algo.h"
+#include <algorithm>
 
 int vfclToolkit::PointOnMesh(const TriMesh* mesh,const point& p)
 {
@@ -20,6 +22,34 @@ int vfclToolkit::PointOnMesh(const TriMesh* mesh,const point& p)
 	return k;
 }
 
+int vfclToolkit::GetFacetByPoint(const TriMesh* mesh, const point& p)
+{
+	assert(mesh);
+
+	int nearestPIndex = PointOnMesh(mesh, p);
+	if (nearestPIndex == -1)
+		return -1;
+	const std::vector<int> &adjacent = mesh->adjacentfaces[nearestPIndex];
+	if (adjacent.empty())
+		return -1;
+
+	typedef std::pair<double, int> pairDI;
+	std::vector<pairDI> distIndex;
+	for (auto fIndex : adjacent)
+	{
+		point c = closest_on_face(mesh, fIndex, p);
+		double tmpdist = static_cast<double>(dist2(c, p));
+		distIndex.push_back(pairDI(tmpdist, fIndex));
+	}
+
+	auto iter = std::min_element(distIndex.begin(),distIndex.end(),
+		[](const pairDI& lhs, const pairDI& rhs)
+	{
+		return lhs.first < rhs.first;
+	});
+
+	return iter->second;
+}
 void vfclToolkit::projectToXZPlane(vector<point>& ret, const TriMesh *mesh)
 {
 	if (!mesh)
